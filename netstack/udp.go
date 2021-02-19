@@ -19,7 +19,7 @@ const udpNoChecksum = true
 
 type UdpHandleFunc func(adapter.UDPPacket)
 
-func WithUDPHandler(handle udpHandleFunc) Option {
+func WithUDPHandler(handle UdpHandleFunc) Option {
 	return func(s *stack.Stack) error {
 		udpHandlePacket := func(id stack.TransportEndpointID, pkt *stack.PacketBuffer) bool {
 			// Ref: gVisor pkg/tcpip/transport/udp/endpoint.go HandlePacket

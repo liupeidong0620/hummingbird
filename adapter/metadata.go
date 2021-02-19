@@ -1,7 +1,6 @@
 package adapter
 
 import (
-	"bytes"
 	"encoding/json"
 	"net"
 	"strconv"
@@ -35,6 +34,20 @@ type Metadata struct {
 	MidPort uint16  `json:"dialerPort"`
 	DstPort uint16  `json:"destinationPort"`
 	Host    string  `json:"host"`
+
+	ModData interface{} `json:"modData"`
+	// dns,wss, direct
+	MidScheme string `json:"dialerSecheme"`
+}
+
+func (m *Metadata) GetModuleData() interface{} {
+	return m.ModData
+}
+
+func (m *Metadata) SetModuleData(data interface{}) {
+	if data != nil {
+		m.ModData = data
+	}
 }
 
 func (m *Metadata) DestinationAddress() string {

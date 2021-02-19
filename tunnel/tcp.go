@@ -7,11 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/xjasonlyu/clash/common/pool"
-	"github.com/xjasonlyu/tun2socks/internal/adapter"
-	"github.com/xjasonlyu/tun2socks/internal/manager"
-	"github.com/xjasonlyu/tun2socks/internal/proxy"
-	//"github.com/xjasonlyu/tun2socks/pkg/log"
+	"github.com/liupeidong0620/hummingbird/adapter"
+	"github.com/liupeidong0620/hummingbird/common/pool"
+	"github.com/liupeidong0620/hummingbird/log"
+	"github.com/liupeidong0620/hummingbird/manager"
 )
 
 const (
@@ -19,24 +18,18 @@ const (
 	relayBufferSize = pool.RelayBufferSize
 )
 
-func handleTCP(localConn adapter.TCPConn) {
+func (nel *Tunnel) handleTCP(localConn adapter.TCPConn) {
 	defer localConn.Close()
 
 	metadata := localConn.Metadata()
 	if !metadata.Valid() {
-		//log.Warnf("[Metadata] not valid: %#v", metadata)
+		log.Warn("[tunnel] Metadata not valid: %#v", metadata)
 		return
 	}
-
-	err := resolveMetadata(metadata)
+	// module process
+	targetConn, err := nel.proxyHandle(localConn, nil)
 	if err != nil {
-		//log.Warnf("[Metadata] resolve metadata error: %v", err)
-		return
-	}
-
-	//targetConn, err := proxy.Dial(metadata)
-	if err != nil {
-		//log.Warnf("[TCP] dial %s error: %v", metadata.DestinationAddress(), err)
+		log.Warn("[tunnel] TCP dial %s error: %v", metadata.DestinationAddress(), err)
 		return
 	}
 
@@ -50,10 +43,10 @@ func handleTCP(localConn adapter.TCPConn) {
 		metadata.MidPort = uint16(port)
 	}
 
-	targetConn = manager.NewTCPTracker(targetConn, metadata)
+	targetConn = manager.NewTracker(targetConn, metadata)
 	defer targetConn.Close()
 
-	//log.Infof("[TCP] %s <--> %s", metadata.SourceAddress(), metadata.DestinationAddress())
+	log.Info("[tunnel] TCP %s <--> %s", metadata.SourceAddress(), metadata.DestinationAddress())
 	relay(localConn, targetConn) /* relay connections */
 }
 

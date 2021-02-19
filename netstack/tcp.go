@@ -37,7 +37,7 @@ const (
 
 type TcpHandleFunc func(adapter.TCPConn)
 
-func WithTCPHandler(handle tcpHandleFunc) Option {
+func WithTCPHandler(handle TcpHandleFunc) Option {
 	return func(s *stack.Stack) error {
 		tcpForwarder := tcp.NewForwarder(s, defaultWndSize, maxConnAttempts, func(r *tcp.ForwarderRequest) {
 			var wq waiter.Queue

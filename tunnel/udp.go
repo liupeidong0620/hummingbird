@@ -7,17 +7,15 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/xjasonlyu/clash/common/pool"
-	"github.com/xjasonlyu/clash/component/resolver"
-	"github.com/xjasonlyu/tun2socks/internal/adapter"
-	"github.com/xjasonlyu/tun2socks/internal/manager"
-	//"github.com/xjasonlyu/tun2socks/internal/proxy"
-	//"github.com/xjasonlyu/tun2socks/pkg/log"
-	"github.com/xjasonlyu/tun2socks/pkg/nat"
+	"github.com/liupeidong0620/hummingbird/adapter"
+	"github.com/liupeidong0620/hummingbird/common/pool"
+	"github.com/liupeidong0620/hummingbird/log"
+	"github.com/liupeidong0620/hummingbird/manager"
+	"github.com/liupeidong0620/hummingbird/nat"
 )
 
 const (
-	udpTimeout    = 30 * time.Second
+	udpTimeout    = 60 * time.Second
 	udpBufferSize = (1 << 16) - 1 // largest possible UDP datagram
 )
 
@@ -27,31 +25,24 @@ var (
 	natTable = nat.NewTable()
 )
 
-func handleUDP(packet adapter.UDPPacket) {
+func (nel *Tunnel) handleUDP(packet adapter.UDPPacket) {
 	metadata := packet.Metadata()
 	if !metadata.Valid() {
-		//log.Warnf("[Metadata] not valid: %#v", metadata)
+		log.Warn("[tunnel] Metadata not valid: %#v", metadata)
 		return
 	}
-
-	// make a fAddr if request ip is fake ip.
-	var fAddr net.Addr
-	if resolver.IsExistFakeIP(metadata.DstIP) {
-		fAddr = metadata.UDPAddr()
-	}
-
-	err := resolveMetadata(metadata)
-	if err != nil {
-		//log.Warnf("[Metadata] resolve metadata error: %v", err)
-		return
-	}
-
-	key := generateNATKey(metadata)
+	// ToDo
+	srcKey := metadata.SourceAddress()
+	dstKey := metadata.DestinationAddress()
 
 	handle := func(drop bool) bool {
-		pc := natTable.Get(key)
+		entrey := natTable.Get(srcKey)
+		if entrey == nil {
+			return false
+		}
+		pc := entrey.Get(dstKey)
 		if pc != nil {
-			handleUDPToRemote(packet, pc, metadata /* as net.Addr */, drop)
+			handleUDPToRemote(packet, pc, drop)
 			return true
 		}
 		return false
@@ -61,7 +52,7 @@ func handleUDP(packet adapter.UDPPacket) {
 		return
 	}
 
-	lockKey := key + "-lock"
+	lockKey := srcKey + dstKey + "-lock"
 	cond, loaded := natTable.GetOrCreateLock(lockKey)
 	go func() {
 		if loaded {
@@ -77,74 +68,99 @@ func handleUDP(packet adapter.UDPPacket) {
 			cond.Broadcast()
 		}()
 
-		//pc, err := proxy.DialUDP(metadata)
+		// module process
+		targetConn, err := nel.proxyHandle(nil, packet)
 		if err != nil {
-			//log.Warnf("[UDP] dial %s error: %v", metadata.DestinationAddress(), err)
+			log.Warn("[tunnel] UDP dial %s error: %v", metadata.DestinationAddress(), err)
 			return
 		}
 
-		if dialerAddr, ok := pc.LocalAddr().(*net.UDPAddr); ok {
+		if dialerAddr, ok := targetConn.LocalAddr().(*net.UDPAddr); ok {
+			metadata.MidIP = dialerAddr.IP
+			metadata.MidPort = uint16(dialerAddr.Port)
+		} else if dialerAddr, ok := targetConn.LocalAddr().(*net.TCPAddr); ok {
 			metadata.MidIP = dialerAddr.IP
 			metadata.MidPort = uint16(dialerAddr.Port)
 		} else {
-			ip, p, _ := net.SplitHostPort(pc.LocalAddr().String())
+			ip, p, _ := net.SplitHostPort(targetConn.LocalAddr().String())
 			port, _ := strconv.ParseUint(p, 10, 16)
 			metadata.MidIP = net.ParseIP(ip)
 			metadata.MidPort = uint16(port)
 		}
 
-		pc = manager.NewUDPTracker(pc, metadata)
+		targetConn = manager.NewTracker(targetConn, metadata)
 
 		go func() {
-			defer pc.Close()
+			defer targetConn.Close()
 			defer packet.Drop()
-			defer natTable.Delete(key)
 
-			handleUDPToLocal(packet, pc, fAddr, udpTimeout)
+			defer func() {
+				// clear
+				entry := natTable.Get(srcKey)
+				if entry == nil {
+					return
+				}
+				entry.Delete(dstKey)
+				if entry.IsEmpty() {
+					natTable.Delete(srcKey)
+				}
+			}()
+
+			handleUDPToLocal(packet, targetConn, udpTimeout)
 		}()
+		// new udp conn
+		entrey := nat.NewEntry()
+		entrey.Set(dstKey, targetConn)
 
-		natTable.Set(key, pc)
+		natTable.Set(srcKey, entrey)
+
 		handle(false /* drop */)
 	}()
 }
 
-func handleUDPToRemote(packet adapter.UDPPacket, pc net.PacketConn, remote net.Addr, drop bool) {
+func handleUDPToRemote(packet adapter.UDPPacket, pc net.Conn, drop bool) {
 	defer func() {
 		if drop {
 			packet.Drop()
 		}
 	}()
 
-	if _, err := pc.WriteTo(packet.Data() /* data */, remote); err != nil {
-		//log.Warnf("[UDP] write to %s error: %v", remote, err)
+	remote := packet.Metadata().UDPAddr()
+
+	if _, err := pc.Write(packet.Data()); err != nil {
+		log.Warn("[UDP] write to %s error: %v", remote, err)
 	}
 
-	//log.Infof("[UDP] %s --> %s", packet.RemoteAddr(), remote)
+	log.Info("[UDP] %s --> %s", packet.RemoteAddr(), remote)
 }
 
-func handleUDPToLocal(packet adapter.UDPPacket, pc net.PacketConn, fAddr net.Addr, timeout time.Duration) {
+func handleUDPToLocal(packet adapter.UDPPacket, pc net.Conn, timeout time.Duration) {
 	buf := pool.Get(udpBufferSize)
 	defer pool.Put(buf)
 
+	metadata := packet.Metadata()
+
+	from := &net.UDPAddr{
+		IP:   metadata.DstIP,
+		Port: int(metadata.DstPort),
+	}
+
 	for /* just loop */ {
 		pc.SetReadDeadline(time.Now().Add(timeout))
-		n, from, err := pc.ReadFrom(buf)
+		n, err := pc.Read(buf)
 		if err != nil {
 			if !errors.Is(err, os.ErrDeadlineExceeded) /* ignore i/o timeout */ {
-				//log.Warnf("[UDP] ReadFrom error: %v", err)
+				log.Warn("[UDP] ReadFrom error: %v", err)
 			}
 			return
 		}
 
-		if fAddr != nil {
-			from = fAddr
-		}
-
+		// write to udp socket
 		if _, err := packet.WriteBack(buf[:n], from); err != nil {
-			//log.Warnf("[UDP] write back from %s error: %v", from, err)
+			log.Warn("[UDP] write back from %s error: %v", from, err)
 			return
 		}
 
-		//log.Infof("[UDP] %s <-- %s", packet.RemoteAddr(), from)
+		log.Info("[UDP] %s <-- %s", packet.RemoteAddr(), from)
 	}
 }
