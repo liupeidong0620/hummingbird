@@ -124,14 +124,14 @@ func (a *App) Run() error {
 		for i := 0; i < len(mods); i++ {
 			targetConn, stat, err = mods[i].Process(tcpConn, updPacket)
 			if err != nil {
-				return nil, err
+				log.Error("[", mods[i].Name(), "] process err: ", err)
 			}
 			if stat == mod.StopStat {
 				break
 			}
 		}
 
-		return targetConn, nil
+		return targetConn, err
 	})
 	// netstack
 	a.statck, err = netstack.NewDefaultStack(a.linkEp, a.nel.Add, a.nel.AddPacket)
