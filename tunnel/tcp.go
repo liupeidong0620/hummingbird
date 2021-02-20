@@ -23,13 +23,13 @@ func (nel *Tunnel) handleTCP(localConn adapter.TCPConn) {
 
 	metadata := localConn.Metadata()
 	if !metadata.Valid() {
-		log.Warn("[tunnel] Metadata not valid: %#v", metadata)
+		log.Warn("[tunnel] Metadata not valid: ", metadata)
 		return
 	}
 	// module process
 	targetConn, err := nel.proxyHandle(localConn, nil)
-	if err != nil {
-		log.Warn("[tunnel] TCP dial %s error: %v", metadata.DestinationAddress(), err)
+	if err != nil || targetConn == nil {
+		log.Warn("[tunnel] TCP dial ", metadata.DestinationAddress(), "error: ", err)
 		return
 	}
 
@@ -46,7 +46,7 @@ func (nel *Tunnel) handleTCP(localConn adapter.TCPConn) {
 	targetConn = manager.NewTracker(targetConn, metadata)
 	defer targetConn.Close()
 
-	log.Info("[tunnel] TCP %s <--> %s", metadata.SourceAddress(), metadata.DestinationAddress())
+	log.Info("[tunnel] TCP ", metadata.SourceAddress(), " <--> ", metadata.DestinationAddress())
 	relay(localConn, targetConn) /* relay connections */
 }
 

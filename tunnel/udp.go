@@ -28,7 +28,7 @@ var (
 func (nel *Tunnel) handleUDP(packet adapter.UDPPacket) {
 	metadata := packet.Metadata()
 	if !metadata.Valid() {
-		log.Warn("[tunnel] Metadata not valid: %#v", metadata)
+		log.Warn("[tunnel] Metadata not valid: ", metadata)
 		return
 	}
 	// ToDo
@@ -70,9 +70,9 @@ func (nel *Tunnel) handleUDP(packet adapter.UDPPacket) {
 
 		// module process
 		targetConn, err := nel.proxyHandle(nil, packet)
-		if err != nil {
+		if err != nil || targetConn == nil {
 			defer packet.Drop()
-			log.Warn("[tunnel] UDP dial %s error: %v", metadata.DestinationAddress(), err)
+			log.Warn("[tunnel] UDP dial ", metadata.DestinationAddress(), " error: ", err)
 			return
 		}
 
@@ -129,10 +129,10 @@ func handleUDPToRemote(packet adapter.UDPPacket, pc net.Conn, drop bool) {
 	remote := packet.Metadata().UDPAddr()
 
 	if _, err := pc.Write(packet.Data()); err != nil {
-		log.Warn("[UDP] write to %s error: %v", remote, err)
+		log.Warn("[UDP] write to ", remote, "error: ", err)
 	}
 
-	log.Info("[UDP] %s --> %s", packet.RemoteAddr(), remote)
+	log.Info("[UDP] ", packet.RemoteAddr(), "--> ", remote)
 }
 
 func handleUDPToLocal(packet adapter.UDPPacket, pc net.Conn, timeout time.Duration) {
@@ -151,17 +151,17 @@ func handleUDPToLocal(packet adapter.UDPPacket, pc net.Conn, timeout time.Durati
 		n, err := pc.Read(buf)
 		if err != nil {
 			if !errors.Is(err, os.ErrDeadlineExceeded) /* ignore i/o timeout */ {
-				log.Warn("[UDP] ReadFrom error: %v", err)
+				log.Warn("[UDP] Read error: ", err)
 			}
 			return
 		}
 
 		// write to udp socket
 		if _, err := packet.WriteBack(buf[:n], from); err != nil {
-			log.Warn("[UDP] write back from %s error: %v", from, err)
+			log.Warn("[UDP] write back from", from, "error: ", err)
 			return
 		}
 
-		log.Info("[UDP] %s <-- %s", packet.RemoteAddr(), from)
+		log.Info("[UDP] ", packet.RemoteAddr(), "<--", from)
 	}
 }

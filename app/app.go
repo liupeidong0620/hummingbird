@@ -62,6 +62,7 @@ func (a *App) initLog() error {
 	log.Info("log init ok.")
 
 	// init interface
+	log.Info("bind interface ok.")
 	a.bindToInterface(a.cmd.Interface)
 	return nil
 }

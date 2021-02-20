@@ -16,7 +16,7 @@ type CmdParam struct {
 var (
 	Cmd CmdParam
 
-	moduleCfg string = `{"module":[{"name":"dns"},{"name":"wss"},{"name":"direct"}]}`
+	moduleCfg string = `{"module":[{"name":"dns"},{"name":"wss","url":["ws://49.233.180.234:80"]},{"name":"direct"}]}`
 )
 
 func init() {

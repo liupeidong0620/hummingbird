@@ -6,6 +6,10 @@ import (
 
 var DefaultManager *Manager
 
+func init() {
+	DefaultManager = &Manager{}
+}
+
 type Manager struct {
 	connections sync.Map
 }
