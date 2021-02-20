@@ -71,6 +71,7 @@ func (nel *Tunnel) handleUDP(packet adapter.UDPPacket) {
 		// module process
 		targetConn, err := nel.proxyHandle(nil, packet)
 		if err != nil {
+			defer packet.Drop()
 			log.Warn("[tunnel] UDP dial %s error: %v", metadata.DestinationAddress(), err)
 			return
 		}
