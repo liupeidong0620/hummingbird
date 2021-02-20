@@ -2,9 +2,12 @@ package wss
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -37,6 +40,8 @@ type cfg struct {
 type wss struct {
 	index int
 	Cfg   cfg
+
+	url []url.URL
 }
 
 func (w *wss) Config(cfg string, index int) error {
@@ -44,6 +49,30 @@ func (w *wss) Config(cfg string, index int) error {
 		return fmt.Errorf("module index error.")
 	}
 	w.index = index
+
+	err := json.Unmarshal([]byte(cfg), &w.Cfg)
+	if err != nil {
+		return err
+	}
+
+	if len(w.Cfg.Url) <= 0 {
+		return fmt.Errorf("wss url is null.")
+	}
+
+	for i := 0; i < len(w.Cfg.Url); i++ {
+		url, err := url.Parse(w.Cfg.Url[i])
+		if err != nil {
+			return err
+		}
+		if url.Scheme == "" || url.Host == "" {
+			return fmt.Errorf("url param error.")
+		}
+
+		if url.Scheme != "ws" && url.Scheme != "wss" {
+			return fmt.Errorf("url param error.")
+		}
+		w.url = append(w.url, *url)
+	}
 	return nil
 }
 
@@ -76,10 +105,18 @@ func (w *wss) Process(tcpConn adapter.TCPConn, udpPacket adapter.UDPPacket) (net
 		return nil, mod.NextStat, fmt.Errorf("input param is nil")
 	}
 
+	// ToDo
+	// Choose the fastest address
+	randN := rand.Intn(len(w.url))
+
 	header := http.Header{}
 	header.Add("Protocol", metadata.Network())
 	// dns proxy wss server
-	if metadata.MidScheme != "" {
+	if metadata.MidScheme != "dns" {
+		header.Add("Scheme", metadata.MidScheme)
+	}
+	if metadata.MidScheme == "" {
+		metadata.MidScheme = w.url[randN].Scheme
 		header.Add("Scheme", metadata.MidScheme)
 	}
 
@@ -87,9 +124,7 @@ func (w *wss) Process(tcpConn adapter.TCPConn, udpPacket adapter.UDPPacket) (net
 	header.Add("Destination-Port", strconv.Itoa(int(metadata.DstPort)))
 	//header.Set("User-Agent", fmt.Sprintf("%s/%s", runtime.GOOS))
 
-	// ToDo
-	// Choose the fastest address
-	targetConn, err = w.newWssConn(w.Cfg.Url[0], header)
+	targetConn, err = w.newWssConn(w.url[randN].String(), header)
 	if err != nil {
 		// print error
 		return nil, mod.NextStat, err
