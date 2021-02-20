@@ -1,6 +1,6 @@
 # hummingbird
 
-A hummingbird powered by gVisor TCP/IP stack
+A hummingbird(tun2websocket) powered by gVisor TCP/IP stack
 
 ## How to Build
 
