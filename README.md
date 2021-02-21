@@ -17,6 +17,29 @@ $ make
 ## QuickStart
 
  <details>
+    <summary><b>With Linux</b></summary>
+
+### start hummingbird
+
+```sh
+$ sudo ./hummingbird-linux-amd64 -interface en0 -module config
+
+# help
+$ ./hummingbird-linux-amd64 -h
+
+```
+
+### config interface & route
+ 
+ > linux.sh would take care of tun & routes.
+
+```shell script
+$ sh linux.sh start
+```
+
+  </details>
+
+ <details>
     <summary><b>With MacOS</b></summary>
 
 ### start hummingbird
@@ -31,7 +54,7 @@ $ ./hummingbird-darwin-amd64 -h
 
 ### config interface & route
  
- > entrypoint.sh would take care of tun & routes.
+ > darwin.sh would take care of tun & routes.
 
 ```shell script
 $ sh darwin.sh start
