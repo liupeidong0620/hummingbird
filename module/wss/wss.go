@@ -113,12 +113,15 @@ func (w *wss) Process(tcpConn adapter.TCPConn, udpPacket adapter.UDPPacket) (net
 	//log.Info("[wss] procotol : ", metadata.Network())
 	header.Add("Protocol", metadata.Network())
 	// dns proxy wss server
-	if metadata.MidScheme != "dns" {
-		header.Add("Scheme", metadata.MidScheme)
-	}
 	if metadata.MidScheme == "" {
 		metadata.MidScheme = w.url[randN].Scheme
 		header.Add("Scheme", metadata.MidScheme)
+	} else if metadata.MidScheme == "dns" ||
+		metadata.MidScheme == "wss" ||
+		metadata.MidScheme == "ws" {
+		header.Add("Scheme", metadata.MidScheme)
+	} else { // direct
+		return nil, mod.NextStat, nil
 	}
 
 	header.Add("Destination-Address", metadata.DstIP.String())
@@ -144,12 +147,17 @@ func (w *wss) newWssConn(url string, requestHeader http.Header) (net.Conn, error
 		HandshakeTimeout: 10 * time.Second,*/
 		NetDial: func(network, addr string) (net.Conn, error) {
 			//log.Info("[wss] netDial: ", network, addr)
-			return dialer.Dial(network, addr)
+			conn, err := dialer.Dial(network, addr)
+			log.Debug("[wss] proxy ", conn.LocalAddr(), " -----> ", addr)
+			return conn, err
 		},
 	}
 
 	wsc, resp, err := wssDialer.Dial(url, requestHeader)
 	if err != nil {
+		if resp == nil {
+			return nil, fmt.Errorf("wss conn err: %s", err.Error())
+		}
 		return nil, fmt.Errorf("err: %s, websocket status code: %s", err.Error(), resp.Status)
 	}
 
