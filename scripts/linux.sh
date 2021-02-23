@@ -2,10 +2,10 @@
 
 TUN_IP=198.18.0.1
 TUN_MASK=15
-TUN_NAME=utun123
+TUN_NAME=tun0
 
-PROXY_ADDR=$2
-DEFAULT_GW=$3
+#PROXY_ADDR=$2
+#DEFAULT_GW=$3
 
 tun_up(){
     echo "tun_up() run ..."
@@ -16,7 +16,7 @@ tun_up(){
 route_add() {
     echo "route_add() run ..."
     #echo "gw: $DEFAULT_GW proxy_addr: $PROXY_ADDR"
-    sudo ip route add $PROXY_ADDR via $DEFAULT_GW
+    #sudo ip route add $PROXY_ADDR via $DEFAULT_GW
     sudo ip route add 0.0.0.0/1 dev $TUN_NAME src $TUN_IP
     sudo ip route add 128.0.0.0/1 dev $TUN_NAME src $TUN_IP
 }
