@@ -148,7 +148,9 @@ func (w *wss) newWssConn(url string, requestHeader http.Header) (net.Conn, error
 		NetDial: func(network, addr string) (net.Conn, error) {
 			//log.Info("[wss] netDial: ", network, addr)
 			conn, err := dialer.Dial(network, addr)
-			log.Debug("[wss] proxy ", conn.LocalAddr(), " -----> ", addr)
+			if conn != nil {
+				log.Debug("[wss] proxy ", conn.LocalAddr(), " -----> ", addr)
+			}
 			return conn, err
 		},
 	}
