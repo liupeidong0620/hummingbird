@@ -31,10 +31,10 @@ $ ./hummingbird-linux-amd64 -h
 
 ### config interface & route
  
- > linux.sh would take care of tun & routes.
+ > scripts/linux.sh would take care of tun & routes.
 
 ```shell script
-$ sh linux.sh start
+$ sh linux.sh start ${proxy_server_ip} ${your_gateway}
 ```
 
   </details>
@@ -54,7 +54,7 @@ $ ./hummingbird-darwin-amd64 -h
 
 ### config interface & route
  
- > darwin.sh would take care of tun & routes.
+ > scripts/darwin.sh would take care of tun & routes.
 
 ```shell script
 $ sh darwin.sh start
