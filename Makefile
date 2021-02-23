@@ -15,13 +15,16 @@ LDFLAGS += -X "$(MODULE)/version.BuildTime=$(BUILD_TIME)"
 LDFLAGS += -X "$(MODULE)/version.SoftName=$(NAME)"
 GO_BUILD = CGO_ENABLED=0 go build $(BUILD_FLAGS) -ldflags '$(LDFLAGS)' -tags '$(TAGS)' -trimpath
 
-all: linux-amd64 darwin-amd64
+all: linux-amd64 darwin-amd64 windows-amd64
 
 darwin-amd64:
 	GOARCH=amd64 GOOS=darwin $(GO_BUILD) -o $(DIR)/$(NAME)-$@
 
 linux-amd64:
 	GOARCH=amd64 GOOS=linux $(GO_BUILD) -o $(DIR)/$(NAME)-$@
+
+windows-amd64:
+	GOARCH=amd64 GOOS=windows $(GO_BUILD) -o $(DIR)/$(NAME)-$@.exe
 
 clean:
 	rm $(DIR)/*

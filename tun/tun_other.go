@@ -8,7 +8,7 @@ import (
 	"github.com/liupeidong0620/hummingbird/common/pool"
 )
 
-const offset = 4
+//const offset = 4
 
 type unixTun struct {
 	mtu int
