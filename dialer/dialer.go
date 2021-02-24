@@ -4,8 +4,13 @@ import (
 	"context"
 	"errors"
 	"net"
+	"time"
 
 	"github.com/Dreamacro/clash/component/resolver"
+)
+
+var (
+	defaultDialTimeout time.Duration = time.Duration(30)
 )
 
 func Dialer() (*net.Dialer, error) {
@@ -20,10 +25,14 @@ func Dialer() (*net.Dialer, error) {
 }
 
 func Dial(network, address string) (net.Conn, error) {
-	return DialContext(context.Background(), network, address)
+	return DialContext(context.Background(), network, address, defaultDialTimeout*time.Second)
 }
 
-func DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+func DialTimeout(network, address string, timeout time.Duration) (net.Conn, error) {
+	return DialContext(context.Background(), network, address, timeout)
+}
+
+func DialContext(ctx context.Context, network, address string, timeout time.Duration) (net.Conn, error) {
 	switch network {
 	case "tcp4", "tcp6", "udp4", "udp6":
 		host, port, err := net.SplitHostPort(address)
@@ -35,6 +44,7 @@ func DialContext(ctx context.Context, network, address string) (net.Conn, error)
 		if err != nil {
 			return nil, err
 		}
+		dialer.Timeout = timeout
 
 		var ip net.IP
 		switch network {
@@ -55,7 +65,7 @@ func DialContext(ctx context.Context, network, address string) (net.Conn, error)
 		}
 		return dialer.DialContext(ctx, network, net.JoinHostPort(ip.String(), port))
 	case "tcp", "udp":
-		return dualStackDialContext(ctx, network, address)
+		return dualStackDialContext(ctx, network, address, timeout)
 	default:
 		return nil, errors.New("network invalid")
 	}
@@ -74,7 +84,7 @@ func ListenPacket(network, address string) (net.PacketConn, error) {
 	return cfg.ListenPacket(context.Background(), network, address)
 }
 
-func dualStackDialContext(ctx context.Context, network, address string) (net.Conn, error) {
+func dualStackDialContext(ctx context.Context, network, address string, timeout time.Duration) (net.Conn, error) {
 	host, port, err := net.SplitHostPort(address)
 	if err != nil {
 		return nil, err
@@ -110,6 +120,7 @@ func dualStackDialContext(ctx context.Context, network, address string) (net.Con
 			result.error = err
 			return
 		}
+		dialer.Timeout = timeout
 
 		var ip net.IP
 		if ipv6 {
