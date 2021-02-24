@@ -3,6 +3,7 @@ package direct
 import (
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/liupeidong0620/hummingbird/adapter"
 	"github.com/liupeidong0620/hummingbird/dialer"
@@ -11,6 +12,8 @@ import (
 
 var (
 	_defaultDirect = &direct{}
+
+	dialTimeout time.Duration = time.Duration(10)
 )
 
 func init() {
@@ -54,11 +57,11 @@ func (d *direct) Process(tcpConn adapter.TCPConn, udpPacket adapter.UDPPacket) (
 	if tcpConn != nil {
 		metadata = tcpConn.Metadata()
 		addr = metadata.DestinationAddress()
-		targetConn, err = dialer.Dial("tcp", addr)
+		targetConn, err = dialer.DialTimeout("tcp", addr, dialTimeout*time.Second)
 	} else if udpPacket != nil {
 		metadata = udpPacket.Metadata()
 		addr = metadata.DestinationAddress()
-		targetConn, err = dialer.Dial("udp", addr)
+		targetConn, err = dialer.DialTimeout("udp", addr, dialTimeout*time.Second)
 	} else {
 		return nil, mod.StopStat, fmt.Errorf("input param is nil")
 	}
