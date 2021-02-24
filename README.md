@@ -34,7 +34,7 @@ $ ./hummingbird-linux-amd64 -h
  > scripts/linux.sh would take care of tun & routes.
 
 ```shell script
-$ sh linux.sh start ${proxy_server_ip} ${your_gateway}
+$ sh linux.sh start
 ```
 
   </details>
@@ -61,8 +61,36 @@ $ sh darwin.sh start
 ```
   </details>
 
+   <details>
+    <summary><b>With Windows</b></summary>
+
+### start hummingbird
+
+> This runs on Windows, but you should install [wintun](https://www.wintun.net/)
+
+```sh
+$ sudo ./hummingbird-windows-amd64 -interface en0 -module config
+
+# help
+$ ./hummingbird-windows-amd64 -h
+
+```
+
+### config interface & route
+
+```shell script
+netsh interface ip set address utun123 static 26.26.26.1 255.255.255.0
+
+netsh interface ip set dns utun123 static 8.8.8.8
+
+route add 0.0.0.0 MASK 128.0.0.0  26.26.26.1
+```
+  </details>
+
 ## server example
 
 [hummingbird-server](https://github.com/liupeidong0620/hummingbird-server.git).
 
 ## TODO
+
+* IPV6 test
