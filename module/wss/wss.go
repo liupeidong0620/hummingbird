@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/liupeidong0620/hummingbird/adapter"
@@ -18,7 +19,8 @@ import (
 )
 
 const (
-	tlsTimeout int = 10
+	tlsTimeout  int           = 10
+	dialTimeout time.Duration = time.Duration(10)
 )
 
 var (
@@ -147,7 +149,7 @@ func (w *wss) newWssConn(url string, requestHeader http.Header) (net.Conn, error
 		HandshakeTimeout: 10 * time.Second,*/
 		NetDial: func(network, addr string) (net.Conn, error) {
 			//log.Info("[wss] netDial: ", network, addr)
-			conn, err := dialer.Dial(network, addr)
+			conn, err := dialer.DialTimeout(network, addr, dialTimeout*time.Second)
 			if conn != nil {
 				log.Debug("[wss] proxy ", conn.LocalAddr(), " -----> ", addr)
 			}
