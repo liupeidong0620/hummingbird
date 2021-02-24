@@ -36,6 +36,10 @@ func CreateTUN(name string, n int) (Device, error) {
 }
 
 func (t *unixTun) Read(packet []byte) (n int, err error) {
+	if offset <= 0 {
+		return t.device.Read(packet, offset)
+	}
+
 	buf := pool.Get(offset + len(packet))
 	defer pool.Put(buf)
 
@@ -48,6 +52,10 @@ func (t *unixTun) Read(packet []byte) (n int, err error) {
 }
 
 func (t *unixTun) Write(packet []byte) (int, error) {
+	if offset <= 0 {
+		return t.device.Write(packet, offset)
+	}
+
 	buf := pool.Get(offset + len(packet))
 	defer pool.Put(buf)
 
