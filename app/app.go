@@ -1,6 +1,8 @@
 package app
 
 import (
+	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
 	"strings"
@@ -70,11 +72,28 @@ func (a *App) initLog() error {
 func (a *App) Init(cmd CmdParam) error {
 	// init log
 	a.cmd = cmd
+	var err error
 
-	a.initLog()
+	err = cmd.check()
+	if err != nil {
+		return err
+	}
+
+	err = a.initLog()
+	if err != nil {
+		return err
+	}
 	// init module
 	a.modCfg = &mod.ModuleCfg{}
-	err := a.modCfg.Init(cmd.Module)
+	if cmd.ModuleCfg != "" {
+		cfgBytes, err := ioutil.ReadFile(cmd.ModuleCfg)
+		if err != nil {
+			return err
+		}
+		err = a.modCfg.Init(cfgBytes)
+	} else {
+		err = a.modCfg.Init([]byte(fmt.Sprintf(moduleCfgTemp, cmd.Proxy)))
+	}
 	if err != nil {
 		return err
 	}
