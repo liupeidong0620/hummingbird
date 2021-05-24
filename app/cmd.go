@@ -1,6 +1,9 @@
 package app
 
-import "flag"
+import (
+	"flag"
+	"fmt"
+)
 
 type CmdParam struct {
 	MTU       int
@@ -9,15 +12,24 @@ type CmdParam struct {
 	LogFile   string
 	Interface string
 	Version   bool
-	Module    string
+	ModuleCfg string
+	Proxy     string
 	Help      bool
 }
 
 var (
 	Cmd CmdParam
 
-	moduleCfg string = `{"module":[{"name":"dns"},{"name":"wss","url":["ws://49.233.180.234:80"]},{"name":"direct"}]}`
+	moduleCfgTemp string = `{"module":[{"name":"dns"},{"name":"wss","url":["%s"]},{"name":"direct"}]}`
 )
+
+func (cmd *CmdParam) check() error {
+	if cmd.ModuleCfg == "" && cmd.Proxy == "" {
+		return fmt.Errorf("module and proxy param is null.")
+	}
+	// todo check url
+	return nil
+}
 
 func init() {
 	flag.IntVar(&Cmd.MTU, "mtu", 1420, "Set device maximum transmission unit (MTU)")
@@ -26,7 +38,8 @@ func init() {
 	flag.StringVar(&Cmd.Interface, "interface", "", "Use network INTERFACE")
 	flag.StringVar(&Cmd.LogFile, "logfile", "", "Log file.")
 	flag.StringVar(&Cmd.LogLevel, "loglevel", "info", "Log level [debug|info|warn|error]")
-	flag.StringVar(&Cmd.Module, "module", moduleCfg, "module config.")
+	flag.StringVar(&Cmd.ModuleCfg, "module", "", "module config file.")
+	flag.StringVar(&Cmd.Proxy, "proxy", "", "proxy url.[ws://1.2.3.4:80]")
 	flag.BoolVar(&Cmd.Help, "help", false, "this help.")
 	flag.Parse()
 }

@@ -55,8 +55,8 @@ func Register(mod Module) {
 	}
 }
 
-func (cfg *ModuleCfg) Init(config string) error {
-	if config == "" {
+func (cfg *ModuleCfg) Init(config []byte) error {
+	if config == nil || len(config) == 0 {
 		return fmt.Errorf("module config is nil.")
 	}
 
@@ -64,7 +64,7 @@ func (cfg *ModuleCfg) Init(config string) error {
 		return fmt.Errorf("no any module.")
 	}
 
-	err := json.Unmarshal([]byte(config), &cfg.cfg)
+	err := json.Unmarshal(config, &cfg.cfg)
 	if err != nil {
 		return err
 	}
