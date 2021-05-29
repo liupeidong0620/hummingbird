@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 )
 
+// udp nat
 type Entry struct {
 	count   int32
 	mapping sync.Map

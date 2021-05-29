@@ -57,7 +57,6 @@ func (tt *Tracker) ID() string {
 func (tt *Tracker) Read(b []byte) (int, error) {
 	n, err := tt.Conn.Read(b)
 	download := int64(n)
-	//tt.manager.PushDownloaded(download)
 	tt.DownloadTotal.Add(download)
 	return n, err
 }
@@ -65,7 +64,6 @@ func (tt *Tracker) Read(b []byte) (int, error) {
 func (tt *Tracker) Write(b []byte) (int, error) {
 	n, err := tt.Conn.Write(b)
 	upload := int64(n)
-	//tt.manager.PushUploaded(upload)
 	tt.UploadTotal.Add(upload)
 	return n, err
 }
