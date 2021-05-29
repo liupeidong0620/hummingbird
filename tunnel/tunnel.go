@@ -5,7 +5,6 @@ import (
 	"runtime"
 
 	"github.com/liupeidong0620/hummingbird/adapter"
-	//"github.com/xjasonlyu/tun2socks/pkg/log"
 )
 
 const (
