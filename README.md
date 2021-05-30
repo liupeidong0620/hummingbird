@@ -69,7 +69,8 @@ $ sh darwin.sh start
 > This runs on Windows, but you should install [wintun](https://www.wintun.net/)
 
 ```sh
-$ sudo ./hummingbird-windows-amd64 -interface en0 -proxy "ws://1.2.3.4:80"
+# root authority
+$ ./hummingbird-windows-amd64 -interface en0 -proxy "ws://1.2.3.4:80"
 
 # help
 $ ./hummingbird-windows-amd64 -h
