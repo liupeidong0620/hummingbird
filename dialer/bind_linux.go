@@ -18,8 +18,8 @@ func bindControl(ifaceName string) controlFn {
 		}
 
 		return c.Control(func(fd uintptr) {
-			syscall.SetsockoptString(int(fd), syscall.SOL_SOCKET, 25, ifaceName)
-			//syscall.BindToDevice(int(fd), ifaceName)
+			//syscall.SetsockoptString(int(fd), syscall.SOL_SOCKET, 25, ifaceName)
+			syscall.BindToDevice(int(fd), ifaceName)
 		})
 	}
 }
