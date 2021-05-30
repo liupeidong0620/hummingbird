@@ -22,7 +22,7 @@ $ make
 ### start hummingbird
 
 ```sh
-$ sudo ./hummingbird-linux-amd64 -interface en0 -module config
+$ sudo ./hummingbird-linux-amd64 -interface en0 -proxy "ws://1.2.3.4:80"
 
 # help
 $ ./hummingbird-linux-amd64 -h
@@ -45,7 +45,7 @@ $ sh linux.sh start
 ### start hummingbird
 
 ```sh
-$ sudo ./hummingbird-darwin-amd64 -interface en0 -module config
+$ sudo ./hummingbird-darwin-amd64 -interface en0 -proxy "ws://1.2.3.4:80"
 
 # help
 $ ./hummingbird-darwin-amd64 -h
@@ -69,7 +69,7 @@ $ sh darwin.sh start
 > This runs on Windows, but you should install [wintun](https://www.wintun.net/)
 
 ```sh
-$ sudo ./hummingbird-windows-amd64 -interface en0 -module config
+$ sudo ./hummingbird-windows-amd64 -interface en0 -proxy "ws://1.2.3.4:80"
 
 # help
 $ ./hummingbird-windows-amd64 -h
